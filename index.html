@@ -123,6 +123,8 @@
     // ---------------------------------------------------------------
     const COUNT = window.innerWidth < 480 ? 3200 : 6200;
     const AMBIENT_MS = 1100;
+    const NAME_FORM_MS = 1800;
+    const NAME_HOLD_MS = 1500;
     const KEY_FORM_MS = 2000;
     const HOLD_MS = 1700;
     const EASE_BACK_MS = 550;
@@ -181,6 +183,14 @@
       return points;
     }
 
+    function drawName(ctx, w, h) {
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "italic " + (w * 0.28) + "px Georgia, serif";
+      ctx.fillText("Rose", w / 2, h / 2);
+    }
+
     function drawKey(ctx, w, h) {
       ctx.fillStyle = "#fff";
       const cx = w * 0.34, cy = h * 0.5;
@@ -215,6 +225,7 @@
       ctx.closePath(); ctx.fill();
     }
 
+    const nameTarget = sampleShapeToPoints(drawName, COUNT);
     const keyTarget = sampleShapeToPoints(drawKey, COUNT);
     const heartTarget = sampleShapeToPoints(drawHeart, COUNT);
 
@@ -371,15 +382,34 @@
           current[ix + 1] = origin[ix + 1] + Math.cos(time * 0.4 + i * 1.3) * 0.15 * drift;
           current[ix + 2] = origin[ix + 2];
         }
-        if (elapsed > AMBIENT_MS) setPhase("toKey");
+        if (elapsed > AMBIENT_MS) setPhase("toName");
+
+      } else if (phase === "toName") {
+        const t = easeInOut(Math.min(1, elapsed / NAME_FORM_MS));
+        for (let i = 0; i < COUNT; i++) {
+          const ix = i * 3;
+          current[ix] = lerp(origin[ix], nameTarget[ix], t);
+          current[ix + 1] = lerp(origin[ix + 1], nameTarget[ix + 1], t);
+          current[ix + 2] = lerp(origin[ix + 2], nameTarget[ix + 2], t);
+        }
+        if (t >= 1) setPhase("nameReady");
+
+      } else if (phase === "nameReady") {
+        for (let i = 0; i < COUNT; i++) {
+          const ix = i * 3;
+          current[ix] = nameTarget[ix] + Math.sin(time * 0.6 + i) * 0.04;
+          current[ix + 1] = nameTarget[ix + 1] + Math.cos(time * 0.5 + i * 1.4) * 0.04;
+          current[ix + 2] = nameTarget[ix + 2];
+        }
+        if (elapsed > NAME_HOLD_MS) setPhase("toKey");
 
       } else if (phase === "toKey") {
         const t = easeInOut(Math.min(1, elapsed / KEY_FORM_MS));
         for (let i = 0; i < COUNT; i++) {
           const ix = i * 3;
-          current[ix] = lerp(origin[ix], keyTarget[ix], t);
-          current[ix + 1] = lerp(origin[ix + 1], keyTarget[ix + 1], t);
-          current[ix + 2] = lerp(origin[ix + 2], keyTarget[ix + 2], t);
+          current[ix] = lerp(nameTarget[ix], keyTarget[ix], t);
+          current[ix + 1] = lerp(nameTarget[ix + 1], keyTarget[ix + 1], t);
+          current[ix + 2] = lerp(nameTarget[ix + 2], keyTarget[ix + 2], t);
         }
         if (t > 0.6) {
           promptEl.classList.add("visible");
