@@ -222,7 +222,7 @@
     function drawHeart(ctx, w, h) {
       ctx.fillStyle = "#fff";
       const cx = w / 2, cy = h / 2 + h * 0.04;
-      const scale = w * 0.0135;
+      const scale = w * 0.017;
       ctx.beginPath();
       for (let t = 0; t <= Math.PI * 2 + 0.01; t += 0.008) {
         const x = 16 * Math.pow(Math.sin(t), 3);
@@ -266,7 +266,7 @@
     const velocities = new Float32Array(COUNT * 3); // used only during burst phase
 
     const coolColor = new THREE.Color(0xbfd4ff);
-    const warmColor = new THREE.Color(0xff0515); // vivid red
+    const warmColor = new THREE.Color(0xff0000); // pure red prevents whiteout in additive blending
     const colors = new Float32Array(COUNT * 3);
     for (let i = 0; i < COUNT; i++) {
       coolColor.toArray(colors, i * 3);
@@ -277,7 +277,7 @@
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 0.15,
+      size: 0.25,
       vertexColors: true,
       transparent: true,
       opacity: 0.95,
