@@ -1,145 +1,229 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>For Rose</title>
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; width: 100%; height: 100%;
-    background: #04030a; overflow: hidden;
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
-  }
-  #c { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>For Rose</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
 
-  #overlay {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-    padding: 8vh 6vw 12vh;
-    pointer-events: none;
-    text-align: center;
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  #prompt {
-    color: rgba(255,255,255,0.72);
-    font-size: clamp(15px, 2.2vw, 19px);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0;
-    transition: opacity 1.4s ease;
-    margin-bottom: 28px;
-  }
-  #prompt.visible { opacity: 1; }
-  #prompt.hidden-out { opacity: 0; transition: opacity 0.5s ease; }
-  #prompt.hidden-out { opacity: 0; transition: opacity 0.5s ease; }
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #04030a;
+      overflow: hidden;
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    }
 
-  #password-wrap {
-    position: absolute;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.8s ease;
-    pointer-events: none;
-    z-index: 20;
-  }
-  #password-wrap.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  #password-input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.4);
-    color: #f4e6d8;
-    font-family: inherit;
-    font-size: 16px;
-    text-align: center;
-    padding: 6px 12px;
-    outline: none;
-    width: 220px;
-    letter-spacing: 0.1em;
-    border-radius: 0;
-  }
-  #password-input:focus {
-    border-bottom: 1px solid rgba(255,255,255,0.8);
-  }
-  #password-input::placeholder {
-    color: rgba(255,255,255,0.2);
-    font-style: italic;
-    letter-spacing: 0.05em;
-  }
+    #c {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      touch-action: none;
+    }
 
-  #ring-wrap {
-    position: relative;
-    width: 0; height: 0;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-  #ring-wrap.visible { opacity: 1; }
-  #progress-ring { position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%) rotate(-90deg); }
-  #progress-ring circle { fill: none; stroke-width: 2; }
-  #ring-bg { stroke: rgba(255,255,255,0.12); }
-  #ring-fg { stroke: #e9c9a8; stroke-linecap: round; transition: stroke-dashoffset 0.05s linear; }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 8vh 6vw 12vh;
+      pointer-events: none;
+      text-align: center;
+    }
 
-  #rose-name {
-    position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    color: #f4e6d8;
-    font-size: clamp(36px, 8vw, 64px);
-    letter-spacing: 0.25em;
-    font-style: italic;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 1.8s ease;
-    text-shadow: 0 0 32px rgba(233, 201, 168, 0.4);
-    z-index: 10;
-  }
-  #rose-name.show { opacity: 1; }
+    #prompt {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: clamp(15px, 2.2vw, 19px);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 1.4s ease;
+      margin-bottom: 28px;
+    }
 
-  #flash {
-    position: fixed; inset: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(255,235,215,0.9), rgba(255,235,215,0) 60%);
-    opacity: 0; pointer-events: none;
-  }
+    #prompt.visible {
+      opacity: 1;
+    }
 
-  #message {
-    display: flex; flex-direction: column; gap: 10px;
-    pointer-events: none;
-  }
-  #message p {
-    margin: 0;
-    color: #f4e6d8;
-    font-size: clamp(20px, 4.2vw, 34px);
-    letter-spacing: 0.01em;
-    opacity: 0;
-    transform: translateY(14px);
-    transition: opacity 1.6s ease, transform 1.6s ease;
-    text-shadow: 0 0 24px rgba(233, 201, 168, 0.35);
-  }
-  #message p.in { opacity: 1; transform: translateY(0); }
-  #message p:first-child {
-    font-size: clamp(16px, 2.6vw, 20px);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(244, 230, 216, 0.7);
-  }
+    #prompt.hidden-out {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
 
-  #skip {
-    position: fixed; bottom: 18px; right: 18px;
-    color: rgba(255,255,255,0.28);
-    font-family: system-ui, sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    background: none; border: none;
-    cursor: pointer;
-    pointer-events: auto;
-  }
-  #skip:hover { color: rgba(255,255,255,0.55); }
-</style>
+    #prompt.hidden-out {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    #password-wrap {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    #password-wrap.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #password-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+      color: #f4e6d8;
+      font-family: inherit;
+      font-size: 16px;
+      text-align: center;
+      padding: 6px 12px;
+      outline: none;
+      width: 220px;
+      letter-spacing: 0.1em;
+      border-radius: 0;
+    }
+
+    #password-input:focus {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    #password-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+      font-style: italic;
+      letter-spacing: 0.05em;
+    }
+
+    #ring-wrap {
+      position: relative;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    #ring-wrap.visible {
+      opacity: 1;
+    }
+
+    #progress-ring {
+      position: absolute;
+      bottom: 96px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-90deg);
+    }
+
+    #progress-ring circle {
+      fill: none;
+      stroke-width: 2;
+    }
+
+    #ring-bg {
+      stroke: rgba(255, 255, 255, 0.12);
+    }
+
+    #ring-fg {
+      stroke: #e9c9a8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.05s linear;
+    }
+
+    #rose-name {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f4e6d8;
+      font-size: clamp(36px, 8vw, 64px);
+      letter-spacing: 0.25em;
+      font-style: italic;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.8s ease;
+      text-shadow: 0 0 32px rgba(233, 201, 168, 0.4);
+      z-index: 10;
+    }
+
+    #rose-name.show {
+      opacity: 1;
+    }
+
+    #flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 235, 215, 0.9), rgba(255, 235, 215, 0) 60%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #message {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    #message p {
+      margin: 0;
+      color: #f4e6d8;
+      font-size: clamp(20px, 4.2vw, 34px);
+      letter-spacing: 0.01em;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 1.6s ease, transform 1.6s ease;
+      text-shadow: 0 0 24px rgba(233, 201, 168, 0.35);
+    }
+
+    #message p.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #message p:first-child {
+      font-size: clamp(16px, 2.6vw, 20px);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(244, 230, 216, 0.7);
+    }
+
+    #skip {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      color: rgba(255, 255, 255, 0.28);
+      font-family: system-ui, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      background: none;
+      border: none;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    #skip:hover {
+      color: rgba(255, 255, 255, 0.55);
+    }
+  </style>
 </head>
+
 <body>
   <canvas id="c"></canvas>
 
@@ -151,9 +235,9 @@
     <div id="message">
       <p>Rose,</p>
       <p>Please accept this gesture as the key to my heart,</p>
-      <p>I'm truly sorry.</p>
-      <p>Please don't give up on me,</p>
-      <p>and I do love you too!!</p>
+      <p>I'm truly sorry, please forgive me,</p>
+      <p>Please don't give up on me, your an amaizing person and i prefer not to lose you,/p>
+      <p>i would rather build a future with you, and I do love you too!!</p>
     </div>
 
     <div id="ring-wrap">
@@ -164,7 +248,8 @@
     </div>
     <div id="prompt">Hold to turn the key</div>
     <div id="password-wrap">
-      <input type="password" id="password-input" placeholder="enter password..." autocomplete="off" spellcheck="false" />
+      <input type="password" id="password-input" placeholder="enter password..." autocomplete="off"
+        spellcheck="false" />
     </div>
   </div>
 
@@ -287,7 +372,7 @@
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
-    
+
     function updateCameraZ() {
       const aspect = window.innerWidth / window.innerHeight;
       // On narrow mobile screens (aspect < 1), pull camera back to fit the horizontal width
@@ -374,7 +459,7 @@
       const flashEl = document.getElementById("flash");
       const promptEl = document.getElementById("prompt");
       const ringWrapEl = document.getElementById("ring-wrap");
-      
+
       flashEl.style.transition = "opacity 0.08s ease";
       flashEl.style.opacity = "1";
       setTimeout(() => {
@@ -456,7 +541,7 @@
           current[ix + 1] = origin[ix + 1] + Math.cos(time * 0.4 + i * 1.3) * 0.15 * drift;
           current[ix + 2] = origin[ix + 2];
         }
-        
+
         if (elapsed > 400 && elapsed < 3200) {
           document.getElementById("rose-name").classList.add("show");
         } else {
@@ -569,4 +654,5 @@
     tick();
   </script>
 </body>
+
 </html>
