@@ -222,7 +222,7 @@
     function drawHeart(ctx, w, h) {
       ctx.fillStyle = "#fff";
       const cx = w / 2, cy = h / 2 + h * 0.04;
-      const scale = w * 0.0105;
+      const scale = w * 0.0135;
       ctx.beginPath();
       for (let t = 0; t <= Math.PI * 2 + 0.01; t += 0.008) {
         const x = 16 * Math.pow(Math.sin(t), 3);
@@ -266,7 +266,7 @@
     const velocities = new Float32Array(COUNT * 3); // used only during burst phase
 
     const coolColor = new THREE.Color(0xbfd4ff);
-    const warmColor = new THREE.Color(0xf3b98a);
+    const warmColor = new THREE.Color(0xff0515); // vivid red
     const colors = new Float32Array(COUNT * 3);
     for (let i = 0; i < COUNT; i++) {
       coolColor.toArray(colors, i * 3);
@@ -277,7 +277,7 @@
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 0.1,
+      size: 0.15,
       vertexColors: true,
       transparent: true,
       opacity: 0.95,
@@ -291,14 +291,6 @@
     // ---------------------------------------------------------------
     // State machine
     // ---------------------------------------------------------------
-    const promptEl = document.getElementById("prompt");
-    const ringWrapEl = document.getElementById("ring-wrap");
-    const ringFgEl = document.getElementById("ring-fg");
-    const flashEl = document.getElementById("flash");
-    const messageLines = Array.from(document.querySelectorAll("#message p"));
-    const skipBtn = document.getElementById("skip");
-    const roseNameEl = document.getElementById("rose-name");
-
     const RING_CIRC = 2 * Math.PI * 50;
 
     let phase = "ambient";
@@ -329,6 +321,10 @@
         velocities[ix + 1] = (dy / len) * speed + (Math.random() - 0.5) * 2;
         velocities[ix + 2] = (dz / len) * speed + (Math.random() - 0.5) * 2;
       }
+      const flashEl = document.getElementById("flash");
+      const promptEl = document.getElementById("prompt");
+      const ringWrapEl = document.getElementById("ring-wrap");
+      
       flashEl.style.transition = "opacity 0.08s ease";
       flashEl.style.opacity = "1";
       setTimeout(() => {
@@ -341,6 +337,7 @@
     }
 
     function revealMessage() {
+      const messageLines = Array.from(document.querySelectorAll("#message p"));
       messageLines.forEach((el, i) => {
         setTimeout(() => el.classList.add("in"), i * MESSAGE_LINE_GAP_MS);
       });
@@ -362,7 +359,7 @@
     window.addEventListener("pointercancel", onUp);
     window.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
 
-    skipBtn.addEventListener("click", () => {
+    document.getElementById("skip").addEventListener("click", () => {
       if (phase === "burst" || phase === "toHeart" || phase === "message") return;
       triggerUnlock();
     });
@@ -392,9 +389,9 @@
         }
         
         if (elapsed > 400 && elapsed < 3200) {
-          roseNameEl.classList.add("show");
+          document.getElementById("rose-name").classList.add("show");
         } else {
-          roseNameEl.classList.remove("show");
+          document.getElementById("rose-name").classList.remove("show");
         }
 
         if (elapsed > AMBIENT_MS) setPhase("toKey");
@@ -408,8 +405,8 @@
           current[ix + 2] = lerp(origin[ix + 2], keyTarget[ix + 2], t);
         }
         if (t > 0.6) {
-          promptEl.classList.add("visible");
-          ringWrapEl.classList.add("visible");
+          document.getElementById("prompt").classList.add("visible");
+          document.getElementById("ring-wrap").classList.add("visible");
         }
         if (t >= 1) setPhase("ready");
 
@@ -422,7 +419,7 @@
           if (phase === "holding" && charge === 0) setPhase("ready");
         }
 
-        ringFgEl.setAttribute(
+        document.getElementById("ring-fg").setAttribute(
           "stroke-dashoffset",
           String(RING_CIRC * (1 - charge))
         );
