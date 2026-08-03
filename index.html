@@ -360,7 +360,42 @@
     }
 
     const keyTarget = sampleShapeToPoints(drawKey, COUNT);
-    const heartTarget = sampleShapeToPoints(drawHeart, COUNT);
+    const baseHeartPoints = sampleShapeToPoints(drawHeart, COUNT);
+    
+    const heartsConfig = [
+      { scale: 1.0, x: 0, y: 0, color: new THREE.Color(0xff0000), phaseOffset: 0 },
+      { scale: 0.35, x: -14, y: 12, color: new THREE.Color(0xff3366), phaseOffset: 1.2 },
+      { scale: 0.4, x: 16, y: 8, color: new THREE.Color(0xff0077), phaseOffset: 2.5 },
+      { scale: 0.3, x: -15, y: -14, color: new THREE.Color(0xff66b3), phaseOffset: 0.8 },
+      { scale: 0.45, x: 14, y: -16, color: new THREE.Color(0xcc0033), phaseOffset: 3.1 },
+      { scale: 0.35, x: 0, y: 18, color: new THREE.Color(0xff00ff), phaseOffset: 1.9 },
+    ];
+    
+    const heartIndices = new Int32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      const r = Math.random();
+      if (r < 0.5) heartIndices[i] = 0;
+      else if (r < 0.6) heartIndices[i] = 1;
+      else if (r < 0.7) heartIndices[i] = 2;
+      else if (r < 0.8) heartIndices[i] = 3;
+      else if (r < 0.9) heartIndices[i] = 4;
+      else heartIndices[i] = 5;
+    }
+
+    const heartTarget = new Float32Array(COUNT * 3);
+    const heartColors = new Float32Array(COUNT * 3);
+
+    for (let i = 0; i < COUNT; i++) {
+      const ix = i * 3;
+      const hIdx = heartIndices[i];
+      const conf = heartsConfig[hIdx];
+      
+      heartTarget[ix] = baseHeartPoints[ix] * conf.scale + conf.x;
+      heartTarget[ix+1] = baseHeartPoints[ix+1] * conf.scale + conf.y;
+      heartTarget[ix+2] = baseHeartPoints[ix+2] * conf.scale;
+      
+      conf.color.toArray(heartColors, ix);
+    }
 
     // ---------------------------------------------------------------
     // Scene
@@ -621,10 +656,10 @@
           current[ix + 1] = lerp(burstFrom[ix + 1], heartTarget[ix + 1], t);
           current[ix + 2] = lerp(burstFrom[ix + 2], heartTarget[ix + 2], t);
 
-          const c1 = coolColor, c2 = warmColor;
-          colors[ix] = lerp(c1.r, c2.r, t);
-          colors[ix + 1] = lerp(c1.g, c2.g, t);
-          colors[ix + 2] = lerp(c1.b, c2.b, t);
+          const c1 = coolColor;
+          colors[ix] = lerp(c1.r, heartColors[ix], t);
+          colors[ix + 1] = lerp(c1.g, heartColors[ix + 1], t);
+          colors[ix + 2] = lerp(c1.b, heartColors[ix + 2], t);
         }
         colAttr.needsUpdate = true;
         if (t >= 1) {
@@ -633,12 +668,21 @@
         }
 
       } else if (phase === "message") {
-        const pulse = 1 + Math.sin(time * 1.1) * 0.015;
         for (let i = 0; i < COUNT; i++) {
           const ix = i * 3;
-          current[ix] = heartTarget[ix] * pulse + Math.sin(time * 0.7 + i) * 0.02;
-          current[ix + 1] = heartTarget[ix + 1] * pulse + Math.cos(time * 0.6 + i * 1.2) * 0.02;
-          current[ix + 2] = heartTarget[ix + 2];
+          const hIdx = heartIndices[i];
+          const conf = heartsConfig[hIdx];
+          
+          // Math.pow(sin, 4) creates a sharp "lub-dub" throb followed by a pause
+          const pulseScale = 1 + Math.pow(Math.sin(time * 2.5 + conf.phaseOffset), 4) * 0.08;
+          
+          const baseX = heartTarget[ix] - conf.x;
+          const baseY = heartTarget[ix + 1] - conf.y;
+          const baseZ = heartTarget[ix + 2];
+          
+          current[ix] = conf.x + baseX * pulseScale + Math.sin(time * 0.7 + i) * 0.02;
+          current[ix + 1] = conf.y + baseY * pulseScale + Math.cos(time * 0.6 + i * 1.2) * 0.02;
+          current[ix + 2] = baseZ * pulseScale;
         }
       }
 
