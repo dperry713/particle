@@ -385,17 +385,37 @@
     const heartTarget = new Float32Array(COUNT * 3);
     const heartColors = new Float32Array(COUNT * 3);
 
-    for (let i = 0; i < COUNT; i++) {
-      const ix = i * 3;
-      const hIdx = heartIndices[i];
-      const conf = heartsConfig[hIdx];
+    function updateHeartTargets() {
+      const aspect = window.innerWidth / window.innerHeight;
+      let spreadX = 1;
+      let spreadY = 1;
       
-      heartTarget[ix] = baseHeartPoints[ix] * conf.scale + conf.x;
-      heartTarget[ix+1] = baseHeartPoints[ix+1] * conf.scale + conf.y;
-      heartTarget[ix+2] = baseHeartPoints[ix+2] * conf.scale;
-      
-      conf.color.toArray(heartColors, ix);
+      if (aspect > 1) {
+        // Desktop: expand horizontally
+        spreadX = Math.min(aspect * 0.85, 1.8);
+      } else {
+        // Mobile: expand vertically
+        spreadY = Math.min((1 / aspect) * 0.8, 1.8);
+      }
+
+      heartsConfig.forEach(conf => {
+        conf.cx = conf.x * spreadX;
+        conf.cy = conf.y * spreadY;
+      });
+
+      for (let i = 0; i < COUNT; i++) {
+        const ix = i * 3;
+        const hIdx = heartIndices[i];
+        const conf = heartsConfig[hIdx];
+        
+        heartTarget[ix] = baseHeartPoints[ix] * conf.scale + conf.cx;
+        heartTarget[ix+1] = baseHeartPoints[ix+1] * conf.scale + conf.cy;
+        heartTarget[ix+2] = baseHeartPoints[ix+2] * conf.scale;
+        
+        conf.color.toArray(heartColors, ix);
+      }
     }
+    updateHeartTargets();
 
     // ---------------------------------------------------------------
     // Scene
@@ -421,6 +441,7 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       updateCameraZ();
+      updateHeartTargets();
     });
 
     const origin = new Float32Array(COUNT * 3);
@@ -676,12 +697,12 @@
           // Math.pow(sin, 4) creates a sharp "lub-dub" throb followed by a pause
           const pulseScale = 1 + Math.pow(Math.sin(time * 2.5 + conf.phaseOffset), 4) * 0.08;
           
-          const baseX = heartTarget[ix] - conf.x;
-          const baseY = heartTarget[ix + 1] - conf.y;
+          const baseX = heartTarget[ix] - conf.cx;
+          const baseY = heartTarget[ix + 1] - conf.cy;
           const baseZ = heartTarget[ix + 2];
           
-          current[ix] = conf.x + baseX * pulseScale + Math.sin(time * 0.7 + i) * 0.02;
-          current[ix + 1] = conf.y + baseY * pulseScale + Math.cos(time * 0.6 + i * 1.2) * 0.02;
+          current[ix] = conf.cx + baseX * pulseScale + Math.sin(time * 0.7 + i) * 0.02;
+          current[ix + 1] = conf.cy + baseY * pulseScale + Math.cos(time * 0.6 + i * 1.2) * 0.02;
           current[ix + 2] = baseZ * pulseScale;
         }
       }
