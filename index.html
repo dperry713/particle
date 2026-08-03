@@ -33,6 +33,44 @@
   }
   #prompt.visible { opacity: 1; }
   #prompt.hidden-out { opacity: 0; transition: opacity 0.5s ease; }
+  #prompt.hidden-out { opacity: 0; transition: opacity 0.5s ease; }
+
+  #password-wrap {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    z-index: 20;
+  }
+  #password-wrap.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #password-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    color: #f4e6d8;
+    font-family: inherit;
+    font-size: 16px;
+    text-align: center;
+    padding: 6px 12px;
+    outline: none;
+    width: 220px;
+    letter-spacing: 0.1em;
+    border-radius: 0;
+  }
+  #password-input:focus {
+    border-bottom: 1px solid rgba(255,255,255,0.8);
+  }
+  #password-input::placeholder {
+    color: rgba(255,255,255,0.2);
+    font-style: italic;
+    letter-spacing: 0.05em;
+  }
 
   #ring-wrap {
     position: relative;
@@ -125,6 +163,9 @@
       </svg>
     </div>
     <div id="prompt">Hold to turn the key</div>
+    <div id="password-wrap">
+      <input type="password" id="password-input" placeholder="enter password..." autocomplete="off" spellcheck="false" />
+    </div>
   </div>
 
   <button id="skip">skip</button>
@@ -246,12 +287,20 @@
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 20);
+    
+    function updateCameraZ() {
+      const aspect = window.innerWidth / window.innerHeight;
+      // On narrow mobile screens (aspect < 1), pull camera back to fit the horizontal width
+      const targetZ = aspect < 1 ? 20 / aspect : 20;
+      camera.position.z = Math.min(targetZ, 45); // cap max distance
+    }
+    updateCameraZ();
 
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      updateCameraZ();
     });
 
     const origin = new Float32Array(COUNT * 3);
@@ -300,6 +349,7 @@
     let holdStartCharge = 0;
     let burstFrom = null;   // captured positions at moment of unlock
     let unlockTime = 0;
+    let passwordSolved = false;
 
     function setPhase(p) {
       phase = p;
@@ -333,6 +383,7 @@
       }, 90);
       promptEl.classList.add("hidden-out");
       ringWrapEl.classList.remove("visible");
+      document.getElementById("password-wrap").classList.remove("visible");
       setPhase("burst");
     }
 
@@ -345,6 +396,7 @@
 
     // Pointer / touch handling — hold anywhere on screen to turn the key
     function onDown(e) {
+      if (!passwordSolved) return;
       if (phase !== "ready" && phase !== "holding") return;
       holding = true;
       holdStartCharge = charge;
@@ -357,11 +409,28 @@
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
-    window.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
+    window.addEventListener("touchstart", (e) => {
+      if (e.target.tagName.toLowerCase() === "input") return;
+      e.preventDefault();
+    }, { passive: false });
 
     document.getElementById("skip").addEventListener("click", () => {
       if (phase === "burst" || phase === "toHeart" || phase === "message") return;
       triggerUnlock();
+    });
+
+    document.getElementById("password-input").addEventListener("input", (e) => {
+      if (e.target.value.trim().toLowerCase() === "soulmate") {
+        passwordSolved = true;
+        document.getElementById("password-wrap").classList.remove("visible");
+        setTimeout(() => {
+          if (phase === "ready" || phase === "holding" || phase === "toKey") {
+            document.getElementById("prompt").classList.add("visible");
+            document.getElementById("ring-wrap").classList.add("visible");
+          }
+        }, 400);
+        e.target.blur();
+      }
     });
 
     // ---------------------------------------------------------------
@@ -405,8 +474,12 @@
           current[ix + 2] = lerp(origin[ix + 2], keyTarget[ix + 2], t);
         }
         if (t > 0.6) {
-          document.getElementById("prompt").classList.add("visible");
-          document.getElementById("ring-wrap").classList.add("visible");
+          if (!passwordSolved) {
+            document.getElementById("password-wrap").classList.add("visible");
+          } else {
+            document.getElementById("prompt").classList.add("visible");
+            document.getElementById("ring-wrap").classList.add("visible");
+          }
         }
         if (t >= 1) setPhase("ready");
 
